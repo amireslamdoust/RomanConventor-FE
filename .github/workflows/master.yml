@@ -1,0 +1,50 @@
+name: Master
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  build:
+    env:
+      CI: true
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [13.x]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Cache node modules
+      uses: actions/cache@v1
+      with:
+        path: ~/.npm # npm cache files are stored in `~/.npm` on Linux/macOS
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: Copy .env
+      run: cp .env.test.dist .env.test
+
+    - name: npm install
+      run: npm ci
+
+    - name: npm test
+      run: npm test
+
+    - name: Copy Original .env
+      run: cp .env.test.dist .env
+
+    - name: npm e2e
+      run: npm run teste2e
+
+
